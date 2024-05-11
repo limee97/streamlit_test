@@ -16,7 +16,8 @@ def plot_top_items(df, top_x, selection):
         df_filtered = df[df > 0]  # Exclude ratings of 0
         top_items = df_filtered.mean().sort_values(ascending=False).head(top_x)
         title = 'Most Highly Rated Items'
-    st.bar_chart(top_items, use_container_width=True, width=0, height=0, title=title)
+    st.bar_chart(top_items, use_container_width=True, width=0, height=0)
+    st.write(f"### {title}")
 
 # Function to generate top X users plot
 def plot_top_users(df, top_x, selection):
@@ -27,7 +28,8 @@ def plot_top_users(df, top_x, selection):
         df_filtered = df[df > 0]  # Exclude ratings of 0
         top_users = df_filtered.mean(axis=1).sort_values(ascending=False).head(top_x)
         title = 'Top Users with Highest Average Ratings'
-    st.bar_chart(top_users, use_container_width=True, width=0, height=0, title=title)
+    st.bar_chart(top_users, use_container_width=True, width=0, height=0)
+    st.write(f"### {title}")
 
 # Main function
 def main():
