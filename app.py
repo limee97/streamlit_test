@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load the Parquet file
-@st.cache_data
+@st.cache_resource
 def load_data():
     return pd.read_parquet('user_item_general.parquet')
 
