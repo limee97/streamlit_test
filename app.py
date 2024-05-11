@@ -11,10 +11,10 @@ def load_data():
 # Function to generate top X items plot
 def plot_top_items(df, top_x, selection):
     if selection == 'Most Frequently Rated':
-        top_items = df.sum().nlargest(top_x)
+        top_items = df[df > 0].count().nlargest(top_x)
         title = 'Most Frequently Rated Items'
     else:
-        top_items = df.mean().nlargest(top_x)
+        top_items = df[df > 0].mean().nlargest(top_x)
         title = 'Most Highly Rated Items'
     plt.figure(figsize=(10, 6))
     sns.barplot(x=top_items.index, y=top_items.values)
@@ -23,14 +23,14 @@ def plot_top_items(df, top_x, selection):
     plt.ylabel('Rating Frequency' if selection == 'Most Frequently Rated' else 'Average Rating')
     plt.title(title)
     st.pyplot()
-
+    
 # Function to generate top X users plot
 def plot_top_users(df, top_x, selection):
     if selection == 'Most Rated':
-        top_users = df.sum(axis=1).nlargest(top_x)
+        top_users = df[df > 0].sum(axis=1).nlargest(top_x)
         title = 'Top Users with Most Ratings'
     else:
-        top_users = df.mean(axis=1).nlargest(top_x)
+        top_users = df[df > 0].mean(axis=1).nlargest(top_x)
         title = 'Top Users with Highest Average Ratings'
     plt.figure(figsize=(10, 6))
     sns.barplot(x=top_users.values, y=top_users.index)
