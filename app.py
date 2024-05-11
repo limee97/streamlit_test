@@ -45,7 +45,8 @@ def main():
     st.sidebar.title('Navigation')
     tabs = ['Exploratory Data Analysis', 'Model Performance', 'Recommendation Demonstration']
     selected_tab = st.sidebar.radio('Go to', tabs)
-
+    st.set_option('deprecation.showPyplotGlobalUse', False)
+    
     if selected_tab == 'Exploratory Data Analysis':
         st.header('Exploratory Data Analysis')
         st.subheader('Items')
