@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load the Parquet file
@@ -16,13 +15,8 @@ def plot_top_items(df, top_x, selection):
     else:
         top_items = df.mean().nlargest(top_x)
         title = 'Most Highly Rated Items'
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x=top_items.index, y=top_items.values)
-    plt.xticks(rotation=45, ha='right')
-    plt.xlabel('Item ID')
-    plt.ylabel('Rating Frequency' if selection == 'Most Frequently Rated' else 'Average Rating')
-    plt.title(title)
-    st.pyplot()
+    st.bar_chart(top_items, use_container_width=True)
+    st.pyplot().set_title(title)
 
 # Function to generate top X users plot
 def plot_top_users(df, top_x, selection):
@@ -32,12 +26,8 @@ def plot_top_users(df, top_x, selection):
     else:
         top_users = df.mean(axis=1).nlargest(top_x)
         title = 'Top Users with Highest Average Ratings'
-    plt.figure(figsize=(10, 6))
-    sns.barplot(x=top_users.values, y=top_users.index)
-    plt.xlabel('Rating Frequency' if selection == 'Most Rated' else 'Average Rating')
-    plt.ylabel('User ID')
-    plt.title(title)
-    st.pyplot()
+    st.bar_chart(top_users, use_container_width=True)
+    st.pyplot().set_title(title)
 
 # Main function
 def main():
