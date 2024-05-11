@@ -4,17 +4,17 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # Load the Parquet file
-@st.cache_data
+@st.cache
 def load_data():
     return pd.read_parquet('user_item_general.parquet')
 
 # Function to generate top X items plot
 def plot_top_items(df, top_x, selection):
     if selection == 'Most Frequently Rated':
-        top_items = df[df > 0].count().nlargest(top_x)
+        top_items = df.sum().nlargest(top_x)
         title = 'Most Frequently Rated Items'
     else:
-        top_items = df[df > 0].mean().nlargest(top_x)
+        top_items = df.mean().nlargest(top_x)
         title = 'Most Highly Rated Items'
     plt.figure(figsize=(10, 6))
     sns.barplot(x=top_items.index, y=top_items.values)
@@ -27,10 +27,10 @@ def plot_top_items(df, top_x, selection):
 # Function to generate top X users plot
 def plot_top_users(df, top_x, selection):
     if selection == 'Most Rated':
-        top_users = df[df > 0].sum(axis=1).nlargest(top_x)
+        top_users = df.sum(axis=1).nlargest(top_x)
         title = 'Top Users with Most Ratings'
     else:
-        top_users = df[df > 0].mean(axis=1).nlargest(top_x)
+        top_users = df.mean(axis=1).nlargest(top_x)
         title = 'Top Users with Highest Average Ratings'
     plt.figure(figsize=(10, 6))
     sns.barplot(x=top_users.values, y=top_users.index)
@@ -45,7 +45,8 @@ def main():
     st.sidebar.title('Navigation')
     tabs = ['Exploratory Data Analysis', 'Model Performance', 'Recommendation Demonstration']
     selected_tab = st.sidebar.radio('Go to', tabs)
-
+    st.set_option('deprecation.showPyplotGlobalUse', False)
+    
     if selected_tab == 'Exploratory Data Analysis':
         st.header('Exploratory Data Analysis')
         st.subheader('Items')
