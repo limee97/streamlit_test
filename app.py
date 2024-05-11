@@ -51,16 +51,16 @@ def main():
         st.subheader('Items')
         st.sidebar.subheader('Items Options')
         top_x_items = st.sidebar.slider('Select top X items', 1, 20, 5)
-        items_selection = st.sidebar.selectbox('Select items by', ['Most Frequently Rated', 'Most Highly Rated'])
+        items_selection = st.sidebar.radio('Select items by', ['Most Frequently Rated', 'Most Highly Rated'])
         
         data = load_data()
         plot_top_items(data, top_x_items, items_selection)
-
+        
         st.subheader('Users')
         st.sidebar.subheader('Users Options')
         top_x_users = st.sidebar.slider('Select top X users', 1, 20, 5)
-        users_selection = st.sidebar.selectbox('Select users by', ['Most Rated', 'Highest Average Rated'])
-
+        users_selection = st.sidebar.radio('Select users by', ['Most Rated', 'Highest Average Rated'])
+        
         plot_top_users(data, top_x_users, users_selection)
 
     elif selected_tab == 'Model Performance':
