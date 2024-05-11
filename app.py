@@ -10,24 +10,24 @@ def load_data():
 # Function to generate top X items plot
 def plot_top_items(df, top_x, selection):
     if selection == 'Most Frequently Rated':
-        top_items = df.sum().nlargest(top_x)
+        top_items = df.sum().sort_values(ascending=False).head(top_x)
         title = 'Most Frequently Rated Items'
     else:
-        top_items = df.mean().nlargest(top_x)
+        df_filtered = df[df > 0]  # Exclude ratings of 0
+        top_items = df_filtered.mean().sort_values(ascending=False).head(top_x)
         title = 'Most Highly Rated Items'
-    st.bar_chart(top_items, use_container_width=True)
-    st.pyplot().set_title(title)
+    st.bar_chart(top_items, use_container_width=True, width=0, height=0, title=title)
 
 # Function to generate top X users plot
 def plot_top_users(df, top_x, selection):
     if selection == 'Most Rated':
-        top_users = df.sum(axis=1).nlargest(top_x)
+        top_users = df.sum(axis=1).sort_values(ascending=False).head(top_x)
         title = 'Top Users with Most Ratings'
     else:
-        top_users = df.mean(axis=1).nlargest(top_x)
+        df_filtered = df[df > 0]  # Exclude ratings of 0
+        top_users = df_filtered.mean(axis=1).sort_values(ascending=False).head(top_x)
         title = 'Top Users with Highest Average Ratings'
-    st.bar_chart(top_users, use_container_width=True)
-    st.pyplot().set_title(title)
+    st.bar_chart(top_users, use_container_width=True, width=0, height=0, title=title)
 
 # Main function
 def main():
