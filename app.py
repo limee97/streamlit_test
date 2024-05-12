@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 from my_module import kmeans_predict,kmeans_train,splitTrain,plot_confusion_matrix,evaluate_ratings_full
-
+import time
 
 # Load the Parquet file
 @st.cache_resource
@@ -107,6 +107,14 @@ def load_custom_data(uploaded_file):
     if uploaded_file is not None:
         data = pd.read_csv(uploaded_file)
         return data
+    
+# Define function for evaluation with loading status
+def evaluate_with_loading(ui_test, y_pred):
+    with st.spinner('Evaluating...'):
+        time.sleep(1)  # Simulating evaluation process
+        TP, TN, FP, FN, precision, recall, f_measure, rmse, mae = evaluate_ratings_full(ui_test, y_pred)
+    st.success('Evaluation Completed!')
+    return TP, TN, FP, FN, precision, recall, f_measure, rmse, mae
 
 # Main function
 def main():
@@ -187,18 +195,25 @@ def main():
                 # Add K selection slider
                 ui_train,ui_test=splitTrain(dataSubset,test)
                 kmeans=kmeans_train(ui_train,k_value)
-                st.success('Training Completed! Predicting and Evaluating now..')
+                st.success('Training Completed!')
                 y_pred=kmeans_predict(kmeans,ui_train,ui_test)
-                TP, TN, FP, FN, precision, recall, f_measure, rmse, mae=evaluate_ratings_full(ui_test, y_pred)
+                TP, TN, FP, FN, precision, recall, f_measure, rmse, mae = evaluate_with_loading(ui_test, y_pred)
                 eval=pd.DataFrame({
                     'Metric':['Precision','Recall','F-Measure','RMSE','MAE'],
                     'Value': [precision, recall, f_measure, rmse, mae]
                 })
-                st.bar_chart(eval.set_index('Metric'))
+                st.write('Evaluation Results')
+                
+                bar_chart = alt.Chart(eval).mark_bar().encode(
+                    x=alt.X('Metric:N', title='Metric', axis=alt.Axis(labelAngle=0)),
+                    y='Value:Q',
+                    text=alt.Text('Value:Q', format='.2f')
+                )
+                bar_chart_with_text = bar_chart.mark_text(align='center',baseline='bottom',).encode(text='Value:Q')
+                st.altair_chart(bar_chart + bar_chart_with_text, use_container_width=True)
+                
                 st.write(plot_confusion_matrix(TP, TN, FP, FN))
-                st.success('Predict and Evaluation Completed!')
-
-            
+                
 
             elif clustering_algorithm == 'Ordered Clustering':
                 st.write('You selected Ordered Clustering')
