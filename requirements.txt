@@ -5,3 +5,4 @@ seaborn
 altair
 plotly
 my_module
+sklearn
