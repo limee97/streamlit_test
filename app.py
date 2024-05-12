@@ -190,7 +190,7 @@ def main():
                 st.success('Training Completed! Predicting and Evaluating now..')
                 y_pred=kmeans_predict(kmeans,ui_train,ui_test)
                 TP, TN, FP, FN, precision, recall, f_measure, rmse, mae=evaluate_ratings_full(ui_test, y_pred)
-                eval=pd.dataframe({
+                eval=pd.Dataframe({
                     'Metric':['Precision','Recall','F-Measure','RMSE','MAE'],
                     'Value': [precision, recall, f_measure, rmse, mae]
                 })
