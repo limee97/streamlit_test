@@ -10,16 +10,16 @@ def load_data():
 # Function to generate top X items plot
 def plot_top_items(df, top_x, selection):
     if selection == 'Most Frequently Rated':
-        top_items = df.sum().sort_values(ascending=False).head(top_x)
+        top_items = df.sum().sort_values(ascending=False).head(top_x).reset_index()
         title = 'Most Frequently Rated Items'
     else:
         df_filtered = df[df > 0]  # Exclude ratings of 0
-        top_items = df_filtered.mean().sort_values(ascending=False).head(top_x)
+        top_items = df_filtered.mean().sort_values(ascending=False).head(top_x).reset_index()
         title = 'Most Highly Rated Items'
-    chart = alt.Chart(top_items.reset_index(), width=600).mark_bar().encode(
-        x='index',
-        y=alt.Y(top_items.name, title=title),
-        tooltip=['index', top_items.name]
+    chart = alt.Chart(top_items, width=600).mark_bar().encode(
+        x=alt.X('index', title='Item ID'),
+        y=alt.Y(top_items.columns[1], title=title),
+        tooltip=['index', top_items.columns[1]]
     ).properties(
         title=title
     )
@@ -28,16 +28,16 @@ def plot_top_items(df, top_x, selection):
 # Function to generate top X users plot
 def plot_top_users(df, top_x, selection):
     if selection == 'Most Rated':
-        top_users = df.sum(axis=1).sort_values(ascending=False).head(top_x)
+        top_users = df.sum(axis=1).sort_values(ascending=False).head(top_x).reset_index()
         title = 'Top Users with Most Ratings'
     else:
         df_filtered = df[df > 0]  # Exclude ratings of 0
-        top_users = df_filtered.mean(axis=1).sort_values(ascending=False).head(top_x)
+        top_users = df_filtered.mean(axis=1).sort_values(ascending=False).head(top_x).reset_index()
         title = 'Top Users with Highest Average Ratings'
-    chart = alt.Chart(top_users.reset_index(), width=600).mark_bar().encode(
-        x='index',
-        y=alt.Y(top_users.name, title=title),
-        tooltip=['index', top_users.name]
+    chart = alt.Chart(top_users, width=600).mark_bar().encode(
+        x=alt.X('index', title='User ID'),
+        y=alt.Y(top_users.columns[1], title=title),
+        tooltip=['index', top_users.columns[1]]
     ).properties(
         title=title
     )
