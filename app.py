@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import plotly.express as px
 from my_module import kmeans_predict,kmeans_train,splitTrain,plot_confusion_matrix,evaluate_ratings_full
-import time
+
 
 # Load the Parquet file
 @st.cache_resource
@@ -111,7 +111,7 @@ def load_custom_data(uploaded_file):
 # Define function for evaluation with loading status
 def evaluate_with_loading(ui_test, y_pred):
     with st.spinner('Evaluating...'):
-        time.sleep(1)  # Simulating evaluation process
+      
         TP, TN, FP, FN, precision, recall, f_measure, rmse, mae = evaluate_ratings_full(ui_test, y_pred)
     st.success('Evaluation Completed!')
     return TP, TN, FP, FN, precision, recall, f_measure, rmse, mae
