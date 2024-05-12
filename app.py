@@ -1,37 +1,41 @@
 import streamlit as st
 import pandas as pd
-import seaborn as sns
+import altair as alt
+import numpy as np
 
 # Load the Parquet file
-@st.cache
+@st.cache_resource
 def load_data():
     return pd.read_parquet('user_item_general.parquet')
 
-# Function to generate top X items plot
-def plot_top_items(df, top_x, selection):
-    if selection == 'Most Frequently Rated':
-        top_items = df.sum().sort_values(ascending=False).head(top_x)
-        title = 'Most Frequently Rated Items'
-    else:
-        df_filtered = df[df > 0]  # Exclude ratings of 0
-        top_items = df_filtered.mean().sort_values(ascending=False).head(top_x)
-        title = 'Most Highly Rated Items'
-    sns.barplot(x=top_items.index, y=top_items.values)
-    st.pyplot()
-    st.write(f"### {title}")
-
-# Function to generate top X users plot
-def plot_top_users(df, top_x, selection):
-    if selection == 'Most Rated':
-        top_users = df.sum(axis=1).sort_values(ascending=False).head(top_x)
-        title = 'Top Users with Most Ratings'
-    else:
-        df_filtered = df[df > 0]  # Exclude ratings of 0
-        top_users = df_filtered.mean(axis=1).sort_values(ascending=False).head(top_x)
-        title = 'Top Users with Highest Average Ratings'
-    sns.barplot(x=top_users.values, y=top_users.index)
-    st.pyplot()
-    st.write(f"### {title}")
+# Function to generate dot plot
+def generate_dot_plot(df, top_x, item_filter='freq'):
+    
+    if item_filter == 'Rated Frequency':
+        df_filtered = df.astype(bool).sum(axis=0).nlargest(top_x)
+        index = df_filtered.index
+        rate_freq = df_filtered.values
+        ave_rate = df[index].replace(0, np.NaN).mean().round(2)  # Set to None as it's not needed for frequency filter
+    elif item_filter == 'Total Ratings':
+        df_filtered = df.sum(axis=0).nlargest(top_x)
+        index = df_filtered.index
+        rate_freq = df[index].astype(bool).sum()
+        ave_rate = df[index].replace(0, np.NaN).mean().round(2)
+    
+    df_plot = pd.DataFrame({'Item ID': index, 'Rated Frequency': rate_freq, 'Average Rating': ave_rate})
+    
+    dot_plot = alt.Chart(df_plot).mark_circle().encode(
+        x=alt.X('Rated Frequency'),
+        y=alt.Y('Average Rating', scale=alt.Scale(domain=[4, 5])),
+        size='Rated Frequency',  # Circle size proportional to rated frequency
+        tooltip=['Item ID'],
+        color=alt.Color('Average Rating', scale=alt.Scale(scheme='viridis')),
+    ).properties(
+        width=700,
+        height=500
+    ).interactive()
+    
+    return dot_plot
 
 # Main function
 def main():
@@ -39,23 +43,16 @@ def main():
     st.sidebar.title('Navigation')
     tabs = ['Exploratory Data Analysis', 'Model Performance', 'Recommendation Demonstration']
     selected_tab = st.sidebar.radio('Go to', tabs)
-    
+    data = load_data()
     if selected_tab == 'Exploratory Data Analysis':
         st.header('Exploratory Data Analysis')
-        st.subheader('Items')
         st.sidebar.subheader('Items Options')
-        top_x_items = st.sidebar.slider('Select top X items', 1, 20, 5)
-        items_selection = st.sidebar.radio('Select items by', ['Most Frequently Rated', 'Most Highly Rated'])
+        top_x_items = st.sidebar.slider('Select top X items', 10, 500, 10)
+        item_filter = st.sidebar.radio('Select display variable', ['Rated Frequency', 'Total Ratings'])
         
-        data = load_data()
-        plot_top_items(data, top_x_items, items_selection)
         
-        st.subheader('Users')
-        st.sidebar.subheader('Users Options')
-        top_x_users = st.sidebar.slider('Select top X users', 1, 20, 5)
-        users_selection = st.sidebar.radio('Select users by', ['Most Rated', 'Highest Average Rated'])
-        
-        plot_top_users(data, top_x_users, users_selection)
+        dot_plot=generate_dot_plot(data, top_x_items,item_filter)
+        st.write(dot_plot)
 
     elif selected_tab == 'Model Performance':
         st.header('Model Performance')
