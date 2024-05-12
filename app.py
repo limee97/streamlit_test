@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import seaborn as sns
+import altair as alt
 
 # Load the Parquet file
 @st.cache
@@ -16,8 +16,14 @@ def plot_top_items(df, top_x, selection):
         df_filtered = df[df > 0]  # Exclude ratings of 0
         top_items = df_filtered.mean().sort_values(ascending=False).head(top_x)
         title = 'Most Highly Rated Items'
-    st.bar_chart(top_items, use_container_width=True, width=0, height=0)
-    st.write(f"### {title}")
+    chart = alt.Chart(top_items.reset_index(), width=600).mark_bar().encode(
+        x='index',
+        y=alt.Y(top_items.name, title=title),
+        tooltip=['index', top_items.name]
+    ).properties(
+        title=title
+    )
+    st.altair_chart(chart, use_container_width=True)
 
 # Function to generate top X users plot
 def plot_top_users(df, top_x, selection):
@@ -28,8 +34,14 @@ def plot_top_users(df, top_x, selection):
         df_filtered = df[df > 0]  # Exclude ratings of 0
         top_users = df_filtered.mean(axis=1).sort_values(ascending=False).head(top_x)
         title = 'Top Users with Highest Average Ratings'
-    st.bar_chart(top_users, use_container_width=True, width=0, height=0)
-    st.write(f"### {title}")
+    chart = alt.Chart(top_users.reset_index(), width=600).mark_bar().encode(
+        x='index',
+        y=alt.Y(top_users.name, title=title),
+        tooltip=['index', top_users.name]
+    ).properties(
+        title=title
+    )
+    st.altair_chart(chart, use_container_width=True)
 
 # Main function
 def main():
@@ -37,7 +49,6 @@ def main():
     st.sidebar.title('Navigation')
     tabs = ['Exploratory Data Analysis', 'Model Performance', 'Recommendation Demonstration']
     selected_tab = st.sidebar.radio('Go to', tabs)
-    st.set_option('deprecation.showPyplotGlobalUse', False)
     
     if selected_tab == 'Exploratory Data Analysis':
         st.header('Exploratory Data Analysis')
