@@ -9,7 +9,7 @@ from my_module import kmeans_predict,kmeans_train,splitTrain,plot_confusion_matr
 
 
 # Load the Parquet file
-@st.cache_data
+@st.cache(ttl=24*3600)
 def load_data():
     return pd.read_parquet('user_item_general.parquet')
 
