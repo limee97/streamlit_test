@@ -299,10 +299,17 @@ def oc_predict(oc_cluster,ui_train,ui_test,sim):
         predicted_ratings=(np.dot(weights,np.array(cluster_user_ratings)))/(division_factor)
         y_pred[row]=predicted_ratings
         #print("Completed Test Iter:",row)
-        
-    y_pred=np.round(y_pred)
+
     
     return y_pred 
+
+def ahc_train(ui_train,k):
+    ui=ui_train
+    ahc = AgglomerativeClustering(n_clusters=k,metric='l2',linkage='average').fit(np.array(ui))
+    return ahc
+
+def ahc_model_only(k):
+    return AgglomerativeClustering(n_clusters=k,metric='l2',linkage='average')
 
 def ahc_predict(ui_train,ui_test,k):
     ui=pd.concat([ui_train,ui_test])
@@ -353,6 +360,62 @@ def ahc_predict(ui_train,ui_test,k):
     y_pred=np.round(y_pred)
     return y_pred
 
+def ahc_predict_only(ui_train,ui_test,ahc):
+    ui=pd.concat([ui_train,ui_test])
+    #create model and cluster using full data. Unable to fit for training data only as scikilearn ahc does not support direct prediction of new data
+    ahc = ahc.fit(np.array(ui))
+    #generate clustered labels
+    predicted_labels=ahc.labels_
+    
+    #slice to only contain labels for ui_train users
+    predicted_labels_train=predicted_labels[:ui_train.shape[0]]
+    #slice to only contain labels for ui_test users
+    predicted_labels_test=predicted_labels[ui_train.shape[0]:]
+
+    
+    #iterate through each user
+    ui_test=np.array(ui_test)
+    ui_train=np.array(ui_train)
+    
+    
+    #create empty np to store predicted values for ui_test
+    y_pred=np.empty((ui_test.shape[0], ui_test.shape[1]))
+    
+    #create weightage matrix (based on distance)
+    dist_matrix=euclidean_distances(np.array(ui))
+    dist_matrix=np.where(dist_matrix==0,0.1,dist_matrix) #convert distances that are 0 to 0.1 (very small) since those points are almost identical to the test user
+    weight_matrix=1/dist_matrix
+    #slice weight matrix to only contain rows from ui_test and cols from ui_train
+    weight_matrix=weight_matrix[ui_train.shape[0]:,:ui_train.shape[0]]
+    
+    
+    #iterate through each ui_test users
+    for index,label in enumerate(predicted_labels_test):
+        #create a weightage array, consist of the probability of each user (ui_train) consisting in that cluster. matrix Shape: [1 x users]
+    
+        #filter for users in same cluster as test user
+        users_in_k = [index for index, value in enumerate(predicted_labels_train) if value == label]
+        ratings=ui_train[users_in_k]
+        weights=weight_matrix[index,users_in_k]
+        #create mask so that only users who rated the item is used for weightage division
+        mask=np.where(ratings !=0,1,ratings)
+        
+        factor=np.dot(mask.T,weights)
+        factor=np.where(factor==0,1,factor)  #convert 0 to 1 to avoid division by 0. Won't be a problem since numerator will be 0 as well
+    
+        predicted_rating=np.transpose(np.dot(ratings.T,weights)/factor)
+        #store predicted rating in y_pred
+        y_pred[index]=predicted_rating
+    
+    return y_pred
+
+
+def gmm_train(ui_train,k):
+    ui_train=np.array(ui_train)
+    gmm=GaussianMixture(k, covariance_type='diag', random_state=42).fit(ui_train)
+    
+    return gmm
+
 def gmm_predict(ui_train,ui_test,k):
     ui_train=np.array(ui_train)
     ui_test=np.array(ui_test)
@@ -382,3 +445,80 @@ def gmm_predict(ui_train,ui_test,k):
         y_pred[index]=predicted_rating
 
     return y_pred
+
+
+def gmm_predict_only(ui_train,ui_test,gmm):
+    ui_train=np.array(ui_train)
+    ui_test=np.array(ui_test)
+    
+    prob=gmm.predict_proba(ui_train)
+
+    
+    #predict
+    predicted_labels=gmm.predict(ui_test)
+    #create empty array to store results
+    y_pred=np.empty((ui_test.shape[0], ui_test.shape[1]))
+    #create mask so that only users who rated the item is used for weightage division
+    mask=np.where(ui_train !=0,1,ui_train)
+    
+    #iterate through each user
+    for index,label in enumerate(predicted_labels):
+    #create a weightage array, consist of the probability of each user (ui_train) consisting in that cluster. matrix Shape: [1 x users]
+        weights=prob[:,label]
+        factor=np.dot(mask.T,weights)
+        factor=np.where(factor==0,1,factor)  #convert 0 to 1 to avoid division by 0. Won't be a problem since numerator will be 0 as well
+    
+        predicted_rating=np.transpose(np.dot(ui_train.T,weights)/factor)
+        #store predicted rating in y_pred
+        y_pred[index]=predicted_rating
+
+    return y_pred
+
+def general_recommend(user_model,model,ui_test,ui_train):
+    ori_data=ui_train
+    if model=='Kmeans':
+        predicted_labels=user_model.predict(ui_test)
+        predicted_center_dist=user_model.transform(ui_test)
+        center_dist_matrix=user_model.transform(ui_train)
+        #iterate through each user
+        ui_test=np.array(ui_test)
+        ui_train=np.array(ui_train)
+    
+    
+        #create mask so that only users who rated the item is used for weightage division
+        mask=np.where(ui_train !=0,1,ui_train)
+        y_pred=np.empty((ui_test.shape[0], ui_test.shape[1]))
+        for index,label in enumerate(predicted_labels):
+            #create a weightage array, consist of the probability of each user (ui_train) consisting in that cluster. matrix Shape: [1 x users]
+            label_rel_dist=abs(predicted_center_dist[index,label]-center_dist_matrix[:,label])
+            label_rel_dist=np.where(label_rel_dist==0,0.1,label_rel_dist)  #convert 0 to 0.1 to avoid division by 0. dist of 0 would have meant identical user
+            weights=1/label_rel_dist
+        
+        
+            factor=np.dot(mask.T,weights)
+            factor=np.where(factor==0,1,factor)  #convert 0 to 1 to avoid division by 0. Won't be a problem since numerator will be 0 as well
+    
+            predicted_rating=np.transpose(np.dot(ui_train.T,weights)/factor)
+            #store predicted rating in y_pred
+            y_pred[index]=predicted_rating
+            
+    if model=='Ordered Clustering':
+        ui_test.index=[max(ui_train.index)+1]
+        y_pred=oc_predict(user_model,ui_train,ui_test,'pearson')
+    
+    if model=='Agglomerative Hierarchical Clustering':
+        y_pred=ahc_predict_only(ui_train,ui_test,user_model)
+
+    if model=='Gaussian Mixture Model':
+        y_pred=gmm_predict_only(ui_train,ui_test,user_model)
+        
+        
+    y_pred=y_pred.flatten()
+    top_index=y_pred.argsort()[-10:][::-1]
+    top_item_id=[ori_data.columns[i] for i in top_index]
+    
+
+        
+            
+    return top_item_id
+
